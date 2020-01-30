@@ -6,7 +6,7 @@ const router = express.Router();
 
 //GET
 
-router.get('/', async (req,res) => { //* GET all accts (SELECT * FROM Accounts;)
+router.get('/', async (req,res) => { //* GET all rows (SELECT * FROM Accounts;)
 
   try{
     const accounts = await db('accounts');
@@ -19,7 +19,7 @@ router.get('/', async (req,res) => { //* GET all accts (SELECT * FROM Accounts;)
   }
 });
 
-router.get('/:id', async (req, res) => { //* GET specific acct (SELECT * FROM Accountrs WHERE id = i;)
+router.get('/:id', async (req, res) => { //* GET specific row (SELECT * FROM Accountrs WHERE id = i;)
   
   const { id } = req.params;
 
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => { //* GET specific acct (SELECT * FROM Ac
 
 //POST
 
-router.post('/', async (req, res) => { //* POST new account (INSERT INTO Accounts (name, budget) VALUES (inputName, inputValue);)
+router.post('/', async (req, res) => { //* POST new row (INSERT INTO Accounts (name, budget) VALUES (inputName, inputValue);)
   
   const acctData = req.body;
 
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => { //* POST new account (INSERT INTO Account
 
 //PUT
 
-router.put('/:id', async (req, res) => { //*PUT existing account (UPDATE Accounts SET name/budget = Value WHERE id = i;)
+router.put('/:id', async (req, res) => { //*PUT existing row (UPDATE Accounts SET name/budget = Value WHERE id = i;)
 
   const { id } = req.params;
   const updatedInfo = req.body;
@@ -74,5 +74,21 @@ router.put('/:id', async (req, res) => { //*PUT existing account (UPDATE Account
 });
 
 //DELETE
+
+router.delete('/:id', async (req, res) => { //*DELETE existing row (DELETE FROM Accounts WHERE id = i;)
+  const { id } = req.params;
+  
+  try{
+    const rowsDeleted = await db('accounts').where('id', id).del();
+    res.status(200).json({
+      deltetedRecords: rowsDeleted
+    });
+  }catch(err){
+    res.status(500).json({
+      message: "There has been a problem deleting account.",
+      err
+    });
+  }
+});
 
 module.exports = router;
