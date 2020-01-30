@@ -19,31 +19,20 @@ router.get('/', async (req,res) => { //* GET all rows (SELECT * FROM Accounts;)
   }
 });
 
-router.get('/:id', async (req, res) => { //* GET specific row (SELECT * FROM Accountrs WHERE id = i;)
+router.get('/:id', validateAccountId, async (req, res) => { //* GET specific row (SELECT * FROM Accountrs WHERE id = i;)
   
-  const { id } = req.params;
-
-  try {
-    const account = await db('accounts').where('id', id);
-    res.status(200).json(account);
-  }catch(err) {
-    res.status(500).json({
-      message: "There's been a problem retrieving account info.",
-      err
-    });
-  }
+  res.status(200).json(req.account);
 });
 
 
 //POST
 
-router.post('/', async (req, res) => { //* POST new row (INSERT INTO Accounts (name, budget) VALUES (inputName, inputValue);)
+router.post('/', validateAccount,async (req, res) => { //* POST new row (INSERT INTO Accounts (name, budget) VALUES (inputName, inputValue);)
   
   const acctData = req.body;
 
   try {
     const account = await db('accounts').insert(acctData);
-    //TODO: see if you can add if statements for what returns here. Conditionals...name and budget required...maybe middleware later during class. Name must be unique. Budget must be a number
     res.status(201).json(account);
   }catch(err) {
     res.status(500).json({
@@ -51,11 +40,11 @@ router.post('/', async (req, res) => { //* POST new row (INSERT INTO Accounts (n
       err
     });
   }
-})
+});
 
 //PUT
 
-router.put('/:id', async (req, res) => { //*PUT existing row (UPDATE Accounts SET name/budget = Value WHERE id = i;)
+router.put('/:id', validateAccountId, async (req, res) => { //*PUT existing row (UPDATE Accounts SET name/budget = Value WHERE id = i;)
 
   const { id } = req.params;
   const updatedInfo = req.body;
@@ -75,7 +64,7 @@ router.put('/:id', async (req, res) => { //*PUT existing row (UPDATE Accounts SE
 
 //DELETE
 
-router.delete('/:id', async (req, res) => { //*DELETE existing row (DELETE FROM Accounts WHERE id = i;)
+router.delete('/:id', validateAccountId, async (req, res) => { //*DELETE existing row (DELETE FROM Accounts WHERE id = i;)
   const { id } = req.params;
   
   try{
@@ -90,5 +79,46 @@ router.delete('/:id', async (req, res) => { //*DELETE existing row (DELETE FROM 
     });
   }
 });
+
+//MIDDLEWARE
+
+async function validateAccountId(req, res, next) {
+  const { id } = req.params;
+  try{
+    const [account] = await db('accounts').where('id', id);
+    if(account) {
+      req.account = account;
+      next();
+    } else {
+      res.status(404).json({
+        message: "An account with this ID could not be found."
+      })
+    }
+  }catch(err){
+    res.status(500).json({
+      message: "There's been a problem getting account."
+    });
+  }
+}
+
+async function validateAccount(req, res, next) {
+
+  const acctData = req.body;
+  if(!acctData.name && !acctData.budget) {
+    res.status(400).json({
+      message: "Missing account data."
+    });
+  } else if(!acctData.name) {
+    res.status(400).json({
+      message: "Please enter account name."
+    });
+  } else if(!acctData.budget) {
+    res.status(400).json({
+      message: "Please enter account budget."
+    })
+  } else {
+    next();
+  }
+}
 
 module.exports = router;
